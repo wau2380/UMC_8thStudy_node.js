@@ -1,15 +1,60 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  output   = "../node_modules/.prisma/client" // ✅ Prisma가 내부적으로 관리할 수 있도록 수정
 }
+
+
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int                 @id @default(autoincrement())
+  email         String              @unique(map: "email") @db.VarChar(255)
+  name          String?             @db.VarChar(100)
+  gender        String              @db.VarChar(15)
+  birth         DateTime            @db.Date
+  address       String              @db.VarChar(255)
+  detailAddress String?             @map("detail_address") @db.VarChar(255)
+  phoneNumber   String              @map("phone_number") @db.VarChar(15)
+
+  userFavorCategories UserFavorCategory[] // ✅ 1:N 관계 설정
+  reviews             Review[]            // ✅ 1:N 관계 설정
+
+  @@map("user")
+}
+
+model FoodCategory {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @db.VarChar(100)
+
+  userFavorCategories UserFavorCategory[]
+
+  @@map("food_category")
+}
+
+model UserFavorCategory {
+  id             Int          @id @default(autoincrement())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int          @map("user_id")
+  foodCategory   FoodCategory @relation(fields: [foodCategoryId], references: [id])
+  foodCategoryId Int          @map("food_category_id")
+
+  @@index([foodCategoryId], map: "f_category_id")
+  @@index([userId], map: "user_id")
+  @@map("user_favor_category")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  storeId   Int
+  userId    Int
+  content   String
+  star      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
 }
