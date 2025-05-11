@@ -1,30 +1,44 @@
-export const bodyToUser = (body) => {
-    const birth = new Date(body.birth);
-  
-    return {
-      email: body.email,
-      name: body.name,
-      gender: body.gender,
-      birth,
-      address: body.address || "",
-      detailAddress: body.detailAddress || "",
-      phoneNumber: body.phoneNumber,
-      preferences: body.preferences,
-    };
-  };
+import { prisma } from "../db.config.js";
 
-  // user.dto.js
+// User 데이터 삽입
+export const addUser = async (data) => {
+  const user = await prisma.user.findFirst({ where: { email: data.email } });
+  if (user) {
+    return null;
+  }
 
-export const responseFromUser = ({ user, preferences }) => {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    gender: user.gender,
-    birth: user.birth?.toISOString().split("T")[0] || null,  // 날짜 형식 변환
-    address: user.address,
-    detailAddress: user.detailAddress,
-    phoneNumber: user.phoneNumber,
-    preferences: preferences || [],
-  };
+  const created = await prisma.user.create({ data: data });
+  return created.id;
+};
+
+// 사용자 정보 얻기
+export const getUser = async (userId) => {
+  const user = await prisma.user.findFirstOrThrow({ where: { id: userId } });
+  return user;
+};
+
+// 음식 선호 카테고리 매핑
+export const setPreference = async (userId, foodCategoryId) => {
+  await prisma.userFavorCategory.create({
+    data: {
+      userId: userId,
+      foodCategoryId: foodCategoryId,
+    },
+  });
+};
+
+// 사용자 선호 카테고리 반환
+export const getUserPreferencesByUserId = async (userId) => {
+  const preferences = await prisma.userFavorCategory.findMany({
+    select: {
+      id: true,
+      userId: true,
+      foodCategoryId: true,
+      foodCategory: true,
+    },
+    where: { userId: userId },
+    orderBy: { foodCategoryId: "asc" },
+  });
+
+  return preferences;
 };

@@ -1,19 +1,12 @@
-import { pool } from "../db.config.js";
-
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 export const addReview = async ({ storeId, userId, content, star }) => {
-  const sql = `
-    INSERT INTO reviews (store_id, user_id, content, star)
-    VALUES (?, ?, ?, ?)
-  `;
-  const [result] = await pool.query(sql, [storeId, userId, content, star]);
-
-  return {
-    id: result.insertId,
-    content,
-    star,
-    created_at: new Date(),
-    updated_at: new Date(),
-  };
+  return await prisma.review.create({
+    data: { storeId, userId, content, star }
+  });
 };
 
+export const getUserReviews = async (userId) => {
+  return await prisma.review.findMany({ where: { userId } });
+};
