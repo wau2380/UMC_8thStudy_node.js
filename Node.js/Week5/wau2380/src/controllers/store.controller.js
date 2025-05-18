@@ -1,18 +1,26 @@
 import { createStoreWithRegionName } from '../services/store.service.js';
+import { BadRequestError } from '../errors/customErrors.js';
 
-export const handleCreateStore = async (req, res) => {
+export const handleCreateStore = async (req, res, next) => {
   try {
     const { name, address, description, regionName } = req.body;
 
-    // ✅ regionName만으로 지역 생성 및 가게 등록
-    const store = await createStoreWithRegionName(regionName, { name, address, description });
+    const store = await createStoreWithRegionName(regionName, {
+      name,
+      address,
+      description,
+    });
 
-    res.status(201).json({
+    res.status(201).success({
       message: "가게가 성공적으로 추가되었습니다.",
-      data: store
+      store,
     });
   } catch (error) {
-    console.error("가게 생성 실패:", error.message);
-    res.status(500).json({ message: "가게 생성 중 오류 발생" });
+    next(
+      new BadRequestError("가게 생성 중 오류 발생", {
+        requestBody: req.body,
+        error: error.message,
+      })
+    );
   }
 };

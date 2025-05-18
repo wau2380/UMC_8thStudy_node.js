@@ -1,26 +1,41 @@
 import { createReview, fetchUserReviews } from '../services/review.service.js';
+import { BadRequestError } from '../errors/customErrors.js'; // ✅ 필요 시
 
-export const postReview = async (req, res) => {
+export const postReview = async (req, res, next) => {
   try {
     const { storeId } = req.params;
     const { userId, content, star } = req.body;
-    const review = await createReview({ storeId: parseInt(storeId), userId, content, star });
-    res.status(201).json({ data: review });
+
+    const review = await createReview({
+      storeId: parseInt(storeId, 10),
+      userId,
+      content,
+      star,
+    });
+
+    res.status(201).success({ review });
   } catch (error) {
-    console.error("리뷰 등록 실패:", error.message);
-    res.status(500).json({ message: "리뷰 등록 중 오류 발생" });
+    next(
+      new BadRequestError("리뷰 등록 중 오류 발생", {
+        storeId: req.params.storeId,
+        error: error.message,
+      })
+    );
   }
 };
 
-export const getMyReviews = async (req, res) => {
+export const getMyReviews = async (req, res, next) => {
   try {
     const userId = parseInt(req.query.userId, 10);
     const reviews = await fetchUserReviews(userId);
-    res.status(200).json({ data: reviews });
+
+    res.success({ reviews });
   } catch (error) {
-    console.error("리뷰 목록 조회 실패:", error.message);
-    res.status(500).json({ message: "리뷰 목록 조회 중 오류 발생" });
+    next(
+      new BadRequestError("리뷰 목록 조회 중 오류 발생", {
+        userId: req.query.userId,
+        error: error.message,
+      })
+    );
   }
 };
-
-
